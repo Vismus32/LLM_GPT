@@ -1,5 +1,6 @@
 #Byte-pair encoder
 from typing import List
+import dill
 class BPE():
     """Токенизатор Byte-Pair Encoding (BPE).
 
@@ -124,30 +125,66 @@ class BPE():
         return ''.join(tokens)
 
 
+    def save(self, filename):
+        with open(filename, 'wb') as f:
+            dill.dump(self, f)
+
+        print(f"Объект сохранён в {filename}")
+
+    @classmethod
+    def load(cls, filename):
+        with open(filename, 'rb') as f:
+            obj = dill.load(f)
+
+        print(f"Объект загружен из {filename}")
+        return obj
+
+
+# if __name__ == "__main__":
+#     text = (
+#         'Однажды был случай в далёком Макао: '
+#         'макака коалу в какао макала, коала лениво какао лакала, '
+#         'макака макала, коала икала.'
+#     )
+
+#     print("text:")
+#     print(text)
+
+#     BP = BPE(30)
+
+#     BP.fit(text)
+#     print('\nVocab:')
+#     print(BP.id2token.items())
+
+#     encoded = BP.encode(text)
+#     print("\nEncode list:")
+#     print(encoded)
+
+#     decoded = BP.decode(encoded)
+#     print("\nDecode text")
+#     print(decoded)
+
+#     if text == decoded:
+#         print("Всё работает верно")
+
 if __name__ == "__main__":
     text = (
         'Однажды был случай в далёком Макао: '
         'макака коалу в какао макала, коала лениво какао лакала, '
         'макака макала, коала икала.'
     )
+#     BP = BPE(30)
+#     BP.fit(text)
 
-    print("text:")
-    print(text)
+#     BP.save('data/bpe.dill')
 
-    BP = BPE(30)
+    BP2 = BPE.load('data/bpe.dill')
 
-    BP.fit(text)
-    print('\nVocab:')
-    print(BP.id2token.items())
-
-    encoded = BP.encode(text)
-    print("\nEncode list:")
+    encoded = BP2.encode(text)
     print(encoded)
+    decoded = BP2.decode(encoded)
 
-    decoded = BP.decode(encoded)
-    print("\nDecode text")
     print(decoded)
+    print(decoded == text)
 
-    if text == decoded:
-        print("Всё работает верно")
 
