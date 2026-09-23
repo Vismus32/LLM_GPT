@@ -1,5 +1,5 @@
 #Byte-pair encoder
-
+from typing import List
 class BPE():
     """Токенизатор Byte-Pair Encoding (BPE).
 
@@ -70,7 +70,7 @@ class BPE():
 
         self.token2id = {token: i for i, token in enumerate(uniq_tokens)}
 
-    def encode(self, text:str):
+    def encode(self, text:str) -> List[int]:
         """
         Энкодер
 
@@ -107,7 +107,21 @@ class BPE():
             encode_text.append(vocab[token])
             
         return encode_text
+    def decode(self, token_ids : List[int]) -> str:
+        """
+        Декодер
 
+        Заменяет полученные идентификаторы токенов на их текстовые представления
+
+        """
+        
+        id2token = self.id2token
+        tokens = []
+
+        for token_id in token_ids:
+            tokens.append(id2token[token_id])
+
+        return ''.join(tokens)
 
 
 if __name__ == "__main__":
@@ -117,11 +131,23 @@ if __name__ == "__main__":
         'макака макала, коала икала.'
     )
 
-    BP = BPE(30)
-    BP.fit(text)
-    print('Vocab:')
-    print(BP.id2token.items())
-    encoded = BP.encode(text)
+    print("text:")
+    print(text)
 
-    print("\nEncode text:")
+    BP = BPE(30)
+
+    BP.fit(text)
+    print('\nVocab:')
+    print(BP.id2token.items())
+
+    encoded = BP.encode(text)
+    print("\nEncode list:")
     print(encoded)
+
+    decoded = BP.decode(encoded)
+    print("\nDecode text")
+    print(decoded)
+
+    if text == decoded:
+        print("Всё работает верно")
+
