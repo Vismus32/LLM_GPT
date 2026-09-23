@@ -73,12 +73,55 @@ class BPE():
     def encode(self, text:str):
         """
         Энкодер
+
+        Кодирует строку.
+        Важно: Выбрал не самый оптимальный вариант, с последовательной заменой 
+        т.к. нет мощностей чтобы сделать полноценный вариант с заменой сразу всех схожих символов
+
+        Args:
+            text (str): Текст, который нужно закодировать
+
+        Returns:
+            encode_text (list): Закодированный список исходного текста
+
         """
         simbols = list(text)
-        pos = 0
+        i = 0
+        vocab = self.token2id
+        new_simbols = []
+        while i < len(simbols):
+            words = []
+            for tokens in vocab:
+                if simbols[i] == tokens[0]:
+                    words.append(tokens)
+            words.sort(key=len, reverse=True) #Сортируем по длине
+            for tokens in words:
+                if simbols[i:i+len(tokens)] == list(tokens):
+                    i += len(tokens)
+                    new_simbols.append(tokens)
+                    break
+
+        encode_text = []
+
+        for token in new_simbols:
+            encode_text.append(vocab[token])
+            
+        return encode_text
+
 
 
 if __name__ == "__main__":
+    text = (
+        'Однажды был случай в далёком Макао: '
+        'макака коалу в какао макала, коала лениво какао лакала, '
+        'макака макала, коала икала.'
+    )
+
     BP = BPE(30)
-    BP.fit('Однажды был случай в далёком Макао: макака коалу в какао макала, коала лениво какао лакала, макака макала, коала икала.')
-    print(list(BP.id2token.values()))
+    BP.fit(text)
+    print('Vocab:')
+    print(BP.id2token.items())
+    encoded = BP.encode(text)
+
+    print("\nEncode text:")
+    print(encoded)
