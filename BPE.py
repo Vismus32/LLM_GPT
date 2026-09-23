@@ -1,25 +1,46 @@
-import sys
-import torch
-import numpy
-from collections import Counter
+#Byte-pair encoder
 
 class BPE():
+    """Токенизатор Byte-Pair Encoding (BPE).
+
+    Реализует простой алгоритм BPE, который начинает с отдельных символов
+    в качестве токенов и итеративно объединяет наиболее часто встречающуюся
+    соседнюю пару токенов до тех пор, пока размер словаря не достигнет заданногозначения. 
+
+    Атрибуты: 
+        vocab_size (int): Целевой размер словаря.
+        id2token (dict[int, str]): Отображение идентификаторов токенов на соответствующие токены.
+        token2id (dict[str, int]): Отображение токенов на их идентификаторы. 
+    """
     def __init__(self,vocab_size:int):
-        self.vocab_size = vocab_size
+        self.vocab_size = vocab_size 
+        self.id2token = {} #Словарь ID -> токен
+        self.token2id = {} #Словарь токен -> ID
+
     def fit(self, text:str):
+        """Обучает токенизатор BPE на переданном тексте.
+
+        Процесс продолжается до тех пор, пока размер словаря
+        не достигнет заданного значения `vocab_size`.
+
+        Args:
+            text (str): Текст, используемый для обучения
+                токенизатора.
+
+        Returns:
+            None: Обученный словарь сохраняется в атрибутах
+                `id2token` и `token2id`.
+        """
+
         uniq_tokens = []
         tokens = []
 
-        for i in range(len(text)):
-            tokens.append(text[i])
-            if text[i] not in uniq_tokens:
-                uniq_tokens.append(text[i])
-        uniq_tokens = sorted(uniq_tokens)
-
+        uniq_tokens = sorted(set(text))
+        tokens = list(text)
         while len(uniq_tokens) != self.vocab_size:
             pairs = {}
             for i in range(len(tokens)-1):
-                pair = tokens[i:i+2]
+                pair = (tokens[i], tokens[i + 1])
                 if pair in pairs:
                     pairs[pair]+=1
                 else:
@@ -30,22 +51,27 @@ class BPE():
                 if pairs[pair] > max_count:
                     max_count = pairs[pair]
                     max_pair = pair
-            
+
+            new_token = ''.join(max_pair)
+            uniq_tokens.append(new_token)
 
             new_tokens = []
-
             i = 0
 
             while i < len(tokens):
-                if i < len(tokens) - 1 and (tokens[i], tokens[i + 1]) == pair:
-                    new_tokens.append(max_pair)
+                if i < len(tokens) - 1 and (tokens[i], tokens[i + 1]) == max_pair:
+                    new_tokens.append(new_token)
                     i += 2
                 else:
                     new_tokens.append(tokens[i])
                     i += 1
-
             tokens = new_tokens
-            #TODO напиши коменты, всё стало не понятно
+        self.id2token = {i: token for i, token in enumerate(uniq_tokens)}
+
+        self.token2id = {token: i for i, token in enumerate(uniq_tokens)}
 
 
-
+if __name__ == "__main__":
+    BP = BPE(30)
+    BP.fit('Однажды был случай в далёком Макао: макака коалу в какао макала, коала лениво какао лакала, макака макала, коала икала.')
+    print(list(BP.id2token.values()))
