@@ -70,6 +70,13 @@ class BPE():
 
         self.token2id = {token: i for i, token in enumerate(uniq_tokens)}
 
+    def encode(self, text:str):
+        """
+        Энкодер
+        """
+        simbols = list(text)
+        pos = 0
+
 
 if __name__ == "__main__":
     BP = BPE(30)
