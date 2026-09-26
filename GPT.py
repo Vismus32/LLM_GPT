@@ -114,7 +114,7 @@ class GPT(nn.Module):
         }, path)
         
     @classmethod
-    def load(cls, path, device):
+    def load(cls, path, device: str = "cpu"):
         checkpoint = torch.load(path, map_location=device)
         model = cls(
             vocab_size=checkpoint['vocab_size'],
@@ -143,4 +143,4 @@ if __name__ == "__main__":
 
     gpt.save("data/gpt_model.pth")
 
-    gpt = GPT.load("data/gpt_model.pth", device=device)
+    gpt = GPT.load("data/gpt_model.pth")
