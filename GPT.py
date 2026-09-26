@@ -67,3 +67,37 @@ class GPT(nn.Module):
         logits = self.linear(embeddings)
 
         return logits
+
+    def generate(self, x: torch.Tensor, max_new_tokens: int) -> torch.Tensor:
+        """
+        Генерирует новые токены на основе входной последовательности.
+
+        Args:
+            x: Входная последовательность токенов размером
+                (batch_size, seq_len).
+            max_new_tokens: Количество токенов, которые необходимо сгенерировать.
+
+        Returns:
+            Последовательность размером
+            (batch_size, seq_len + max_new_tokens).
+        """
+        for _ in range(max_new_tokens):
+            # Оставляем только последние max_seq_len токенов
+            x_context = x[:, -self.max_seq_len:]
+
+            # Получаем логиты
+            logits = self.forward(x_context)
+
+            # Берём логиты только последнего токена
+            logits = logits[:, -1, :]
+
+            # Преобразуем логиты в вероятности через софтмакс
+            probabilities = torch.softmax(logits, dim=-1)
+
+            # Выбираем токен с максимальной вероятностью
+            next_token = torch.argmax(probabilities, dim=-1, keepdim=True)
+
+            # Добавляем новый токен в конец последовательности
+            x = torch.cat((x, next_token), dim=1)
+
+        return x
