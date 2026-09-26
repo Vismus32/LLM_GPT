@@ -68,7 +68,7 @@ class GPT(nn.Module):
 
         return logits
 
-    def generate(self, x: torch.Tensor, max_new_tokens: int, do_sample: bool = False) -> torch.Tensor:
+    def generate(self, x: torch.Tensor, max_new_tokens: int, do_sample: bool = False, temperature: float = 1.0) -> torch.Tensor:
         """
         Генерирует новые токены на основе входной последовательности.
 
@@ -76,6 +76,8 @@ class GPT(nn.Module):
             x: Входная последовательность токенов размером
                 (batch_size, seq_len).
             max_new_tokens: Количество токенов, которые необходимо сгенерировать.
+            do_sample: Флаг, указывающий на необходимость выбора токена с учетом вероятностей.
+            temperature: Температура для регулирования случайности выбора токенов.
 
         Returns:
             Последовательность размером
@@ -87,6 +89,9 @@ class GPT(nn.Module):
 
             # Получаем логиты
             logits = self.forward(x_context)
+
+            # Делим на температуру
+            logits = logits / temperature
 
             # Берём логиты только последнего токена
             logits = logits[:, -1, :]
