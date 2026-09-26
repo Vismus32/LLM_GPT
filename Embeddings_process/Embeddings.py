@@ -48,5 +48,3 @@ class PositionalEmbeddings(nn.Module):
         embeddings = self.pos_embeddings(positions)
 
         return embeddings
-
-    # TODO Сложение сделаю позже, когда буду всё собирать вместе
