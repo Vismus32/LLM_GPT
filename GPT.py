@@ -68,7 +68,7 @@ class GPT(nn.Module):
 
         return logits
 
-    def generate(self, x: torch.Tensor, max_new_tokens: int) -> torch.Tensor:
+    def generate(self, x: torch.Tensor, max_new_tokens: int, do_sample: bool = False) -> torch.Tensor:
         """
         Генерирует новые токены на основе входной последовательности.
 
@@ -94,8 +94,19 @@ class GPT(nn.Module):
             # Преобразуем логиты в вероятности через софтмакс
             probabilities = torch.softmax(logits, dim=-1)
 
-            # Выбираем токен с максимальной вероятностью
-            next_token = torch.argmax(probabilities, dim=-1, keepdim=True)
+            if do_sample:
+                # Случайно выбираем токен согласно его вероятности
+                next_token = torch.multinomial(
+                    probabilities,
+                    num_samples=1
+                )
+            else:
+                # Выбираем токен с максимальной вероятностью
+                next_token = torch.argmax(
+                    probabilities,
+                    dim=-1,
+                    keepdim=True
+                )
 
             # Добавляем новый токен в конец последовательности
             x = torch.cat((x, next_token), dim=1)
