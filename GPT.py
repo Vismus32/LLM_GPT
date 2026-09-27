@@ -181,9 +181,7 @@ class GPT(nn.Module):
 
         Args:
             train_loader: DataLoader для тренировочной выборки.
-                Каждый элемент должен содержать пару (inputs, targets).
             valid_loader: DataLoader для валидационной выборки.
-                Каждый элемент должен содержать пару (inputs, targets).
             num_epoch: Количество эпох обучения.
             learning_rate: Скорость обучения для оптимизатора Adam.
 
@@ -205,14 +203,16 @@ class GPT(nn.Module):
         # Создаём оптимизатор
         optimizer = Adam(self.parameters(), lr=learning_rate)
 
-        for epoch in range(num_epoch):
+        # Цикл по эпохам
+        for epoch in tqdm(range(num_epoch), desc="Epochs"):
+
             # Режим обучения
             self.train()
 
             train_losses = []
 
-            for inputs, targets in train_loader:
-                # Переносим данные на device
+            # Цикл по тренировочным батчам
+            for inputs, targets in tqdm(train_loader, desc="Training", leave=False):
                 inputs = inputs.to(self.device)
                 targets = targets.to(self.device)
 
@@ -226,10 +226,7 @@ class GPT(nn.Module):
                 targets = targets.view(-1)
 
                 # Cross entropy loss
-                loss = cross_entropy(
-                    logits,
-                    targets
-                )
+                loss = cross_entropy(logits, targets)
 
                 # Сохраняем loss внутри класса
                 self.train_loss = loss
@@ -255,8 +252,13 @@ class GPT(nn.Module):
 
             # Отключаем вычисление градиентов
             with torch.no_grad():
-                for inputs, targets in valid_loader:
-                    # Переносим данные на device
+
+                # Цикл по валидационным батчам
+                for inputs, targets in tqdm(
+                    valid_loader,
+                    desc="Validation",
+                    leave=False
+                ):
                     inputs = inputs.to(self.device)
                     targets = targets.to(self.device)
 
