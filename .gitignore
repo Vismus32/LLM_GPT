@@ -3,4 +3,3 @@ __pycache__/
 *.pyc
 .vscode/
 HELP.txt
-test.py
