@@ -1,0 +1,32 @@
+import torch
+from torch.utils.data import Dataset
+
+
+class GetData(Dataset):
+
+    def __init__(self,data: list ,seq_len: int ,device: str = "cpu"):
+        self.data = data
+        self.seq_len = seq_len
+        self.device = device
+
+    def __len__(self) -> int:
+        """
+        Возвращает количество примеров в датасете.
+        """
+        return len(self.data) - self.seq_len - 1
+
+    def __getitem__(self, idx: int):
+        """
+        Возвращает входную и целевую последовательности.
+
+        Args:
+            idx: Номер позиции в тренировочной последовательности.
+
+        Returns:
+            Кортеж из входной и целевой последовательностей.
+        """
+        x = torch.tensor(self.data[idx:idx + self.seq_len], device=self.device)
+
+        y = torch.tensor(self.data[idx + 1:idx + self.seq_len + 1],device=self.device)
+
+        return x, y
