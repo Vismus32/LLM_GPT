@@ -1,8 +1,14 @@
 import torch.nn as nn
 import torch
 
+from tqdm import tqdm
+
 from Embeddings_process.Embeddings import PositionalEmbeddings, TokenEmbeddings
-from Transformer import Decoder
+from Transformer.Decoder import Decoder
+
+from torch.utils.data import DataLoader
+from torch.optim import Adam
+from torch.nn.functional import cross_entropy
 
 
 class GPT(nn.Module):
@@ -166,6 +172,117 @@ class GPT(nn.Module):
             x = torch.cat((x, next_token), dim=1)
 
         return x
+
+
+    def fit(self, train_loader: DataLoader, valid_loader: DataLoader, num_epoch: int, learning_rate: float):
+        """
+        Обучает модель GPT на тренировочной выборке и оценивает её
+        качество на валидационной выборке.
+
+        Args:
+            train_loader: DataLoader для тренировочной выборки.
+                Каждый элемент должен содержать пару (inputs, targets).
+            valid_loader: DataLoader для валидационной выборки.
+                Каждый элемент должен содержать пару (inputs, targets).
+            num_epoch: Количество эпох обучения.
+            learning_rate: Скорость обучения для оптимизатора Adam.
+
+        В процессе обучения модель переводится в режим train(),
+        а при валидации — в режим eval() с отключением вычисления
+        градиентов.
+
+        Атрибуты:
+            train_loss: Последнее значение функции потерь на тренировочной
+                выборке.
+            valid_loss: Последнее значение функции потерь на валидационной
+                выборке.
+        """
+
+
+        # Переводим модель на нужное устройство
+        self.to(self.device)
+
+        # Создаём оптимизатор
+        optimizer = Adam(self.parameters(), lr=learning_rate)
+
+        for epoch in range(num_epoch):
+            # Режим обучения
+            self.train()
+
+            train_losses = []
+
+            for inputs, targets in train_loader:
+                # Переносим данные на device
+                inputs = inputs.to(self.device)
+                targets = targets.to(self.device)
+
+                # Forward pass
+                logits = self.forward(inputs)
+
+                # Переобразуем [batch_size, seq_len, vocab_size] в [batch_size * seq_len, vocab_size] для вычисления потерь
+                logits = logits.view(-1, self.vocab_size)
+
+                # [batch_size, seq_len] переобразуем в [batch_size * seq_len] для вычисления потерь
+                targets = targets.view(-1)
+
+                # Cross entropy loss
+                loss = cross_entropy(logits, targets)
+
+                # Сохраняем loss внутри класса
+                self.train_loss = loss
+
+                # Backward pass
+                optimizer.zero_grad()
+                loss.backward()
+
+                # Шаг оптимизатора
+                optimizer.step()
+
+                train_losses.append(loss.item())
+
+            # Средний training loss
+            mean_train_loss = sum(train_losses) / len(train_losses)
+
+            print("Epoch {}/{} - train loss: {}".format(epoch + 1, num_epoch, mean_train_loss))
+
+            # Режим оценки
+            self.eval()
+
+            valid_losses = []
+
+            # Отключаем вычисление градиентов
+            with torch.no_grad():
+                for inputs, targets in valid_loader:
+                    # Переносим данные на device
+                    inputs = inputs.to(self.device)
+                    targets = targets.to(self.device)
+
+                    # Forward pass
+                    logits = self.forward(inputs)
+
+                    # Переобразуем [batch_size, seq_len, vocab_size] в [batch_size * seq_len, vocab_size] для вычисления потерь
+                    logits = logits.view(-1, self.vocab_size)
+
+                    # [batch_size, seq_len] переобразуем в [batch_size * seq_len] для вычисления потерь
+                    targets = targets.view(-1)
+
+                    # Validation loss
+                    loss = cross_entropy(logits, targets)
+
+                    # Сохраняем loss внутри класса
+                    self.valid_loss = loss
+
+                    valid_losses.append(loss.item())
+
+            # Средний validation loss
+            mean_valid_loss = sum(valid_losses) / len(valid_losses)
+
+            print("Epoch {}/{} - valid loss: {}".format(epoch + 1, num_epoch, mean_valid_loss))
+
+            # Локальное сохранение текущей версии модели
+            self.save("data/gpt_model_epoch_{}.pth".format(epoch + 1))
+
+
     
     def save(self, path):
         torch.save({
@@ -192,6 +309,9 @@ class GPT(nn.Module):
         model.load_state_dict(checkpoint['model_state_dict'])
         model.to(device)
         return model
+
+
+    
 
 
 if __name__ == "__main__":
