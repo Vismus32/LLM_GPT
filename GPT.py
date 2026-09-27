@@ -226,7 +226,10 @@ class GPT(nn.Module):
                 targets = targets.view(-1)
 
                 # Cross entropy loss
-                loss = cross_entropy(logits, targets)
+                loss = cross_entropy(
+                    logits,
+                    targets
+                )
 
                 # Сохраняем loss внутри класса
                 self.train_loss = loss
