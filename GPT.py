@@ -68,7 +68,8 @@ class GPT(nn.Module):
 
         return logits
 
-    def generate(self, x: torch.Tensor, max_new_tokens: int, do_sample: bool = False, temperature: float = 1.0) -> torch.Tensor:
+    def generate(self, x: torch.Tensor, max_new_tokens: int, do_sample: bool = False,
+                temperature: float = 1.0, top_k: int = None, top_p: float = None) -> torch.Tensor:
         """
         Генерирует новые токены на основе входной последовательности.
 
@@ -95,6 +96,54 @@ class GPT(nn.Module):
 
             # Берём логиты только последнего токена
             logits = logits[:, -1, :]
+
+            if do_sample:
+                # top_k
+                if top_k is not None:
+                    top_k_values, _ = torch.topk(logits, top_k, dim=-1)
+
+                    # Значение k-го по величине логита
+                    min_top_k = top_k_values[:, -1].unsqueeze(-1)
+
+                    # Всё, что меньше k-го логита, заменяем на -inf
+                    logits = torch.where(logits < min_top_k, torch.full_like(logits, -float("Inf")), logits)
+
+                # top_p
+                if top_p is not None:
+                    # Получаем вероятности
+                    probabilities = torch.softmax(logits, dim=-1)
+
+                    # Сортируем вероятности по убыванию
+                    sorted_probs, sorted_indices = torch.sort(
+                        probabilities,
+                        descending=True,
+                        dim=-1
+                    )
+
+                    # Считаем кумулятивные вероятности
+                    cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
+
+                    # Определяем токены, которые нужно удалить
+                    sorted_indices_to_remove = cumulative_probs > top_p
+
+                    sorted_indices_to_remove[:, 0] = 0
+
+                    # Возвращаем маску из отсортированного порядка
+                    # в исходный порядок токенов
+                    indices_to_remove = torch.zeros_like(sorted_indices_to_remove)
+
+                    indices_to_remove.scatter_(
+                        dim=-1,
+                        index=sorted_indices,
+                        src=sorted_indices_to_remove
+                    )
+
+                    # Заменяем логиты удаляемых токенов на -inf
+                    logits = logits.masked_fill(
+                        indices_to_remove.byte(),
+                        -float("Inf")
+                    )
+
 
             # Преобразуем логиты в вероятности через софтмакс
             probabilities = torch.softmax(logits, dim=-1)
