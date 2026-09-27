@@ -11,20 +11,20 @@ def main():
     # Параметры обучения
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    seq_len = 128
+    seq_len = 64
     batch_size = 32
 
     vocab_size = 2000
     max_seq_len = seq_len
 
-    emb_size = 256
-    num_heads = 8
+    emb_size = 128
+    num_heads = 4
     head_size = 32
-    num_layers = 6
+    num_layers = 2
     dropout = 0.1
 
     learning_rate = 2.5e-4
-    num_epoch = 10
+    num_epoch = 2
 
     print("Device:", device)
 
